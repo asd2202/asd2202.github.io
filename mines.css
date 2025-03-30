@@ -95,7 +95,7 @@ body::after {
 }
 
 .cells-board-wrapper {
-  margin: 20px auto;
+  margin-bottom: 15px;
   position: relative;
   width: min(320px, 90vw);
   transform-style: preserve-3d;
@@ -828,7 +828,7 @@ body::after {
   font-size: 3.5rem;
   font-weight: 900;
   text-align: center;
-  margin: 20px 0;
+  margin: 10px 0 20px 0;
   text-transform: uppercase;
   letter-spacing: 3px;
   position: relative;
@@ -982,9 +982,10 @@ body::after {
 
 /* Стили информации об игре */
 .game-info {
+  margin-top: 15px;
+  padding-top: 10px;
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
   padding: 10px 0;
   color: var(--text-dim);
 }
@@ -994,6 +995,8 @@ body::after {
 }
 
 .stats-info {
+  margin-top: 5px;
+  margin-bottom: 5px;
   display: flex;
   gap: 20px;
 }
@@ -1032,7 +1035,8 @@ body::after {
 
 /* Анимации для всех кнопок */
 .controls-container {
-  margin-top: 20px;
+  margin-top: 15px;
+  margin-bottom: 15px;
 }
 
 /* Стили для анимаций ячеек */
@@ -1232,7 +1236,8 @@ body::after {
 
 .developer-info {
   text-align: center;
-  margin-top: 15px;
+  margin-top: 10px;
+  padding-top: 10px;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
   font-weight: 500;

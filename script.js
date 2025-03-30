@@ -36,7 +36,8 @@ document.addEventListener('DOMContentLoaded', function () {
     firstClick: true,
     gameOver: false,
     minesPlaced: false,
-    signalUsed: false
+    signalUsed: false,
+    originalImages: []
   };
   
   // Сохраняем оригинальное состояние доски
@@ -154,7 +155,8 @@ document.addEventListener('DOMContentLoaded', function () {
       firstClick: true,
       gameOver: false,
       minesPlaced: false,
-      signalUsed: false
+      signalUsed: false,
+      originalImages: []
     };
     
     // Обновляем счетчики
@@ -172,6 +174,12 @@ document.addEventListener('DOMContentLoaded', function () {
       setTimeout(() => {
         cell.classList.add('cell-appear');
       }, index * 30);
+      
+      // Сохраняем оригинальное изображение ячейки
+      const img = cell.querySelector('img');
+      if (img) {
+        gameState.originalImages[index] = img.src;
+      }
       
       // Инициализируем массив ячеек
       gameState.cells[index] = {
@@ -287,8 +295,6 @@ document.addEventListener('DOMContentLoaded', function () {
   
   // Кнопка "Получить сигнал" - показывает звездочки на безопасных ячейках
   safeSignalBtn.addEventListener('click', function() {
-    if (gameState.signalUsed) return;
-    
     // Находим все безопасные ячейки
     const safeCells = gameState.cells.filter(cell => !cell.isMine);
     
@@ -312,18 +318,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // Перемешиваем массив ячеек
     safeCells.sort(() => Math.random() - 0.5);
     
-    // Отключаем кнопку и добавляем анимацию нажатия
-    this.disabled = true;
+    // Сбрасываем все звезды перед отображением новых
+    resetAllStars();
+    
+    // Добавляем анимацию нажатия кнопки
     this.classList.add('btn-clicked');
     setTimeout(() => this.classList.remove('btn-clicked'), 300);
     
     // Показываем звездочки на выбранных ячейках с задержкой
     function showStarsSequentially(index) {
       if (index >= showCount) {
-        // Отмечаем, что сигнал был использован после показа всех звезд
-        gameState.signalUsed = true;
+        // Не меняем signalUsed на true, чтобы можно было нажимать кнопку повторно
         console.log("Все звезды показаны");
-        
         return;
       }
       
@@ -372,6 +378,59 @@ document.addEventListener('DOMContentLoaded', function () {
     // Запускаем последовательное отображение
     showStarsSequentially(0);
   });
+  
+  // Функция сброса всех звезд
+  function resetAllStars() {
+    gameState.cells.forEach(cellData => {
+      const cell = cellData.element;
+      const index = cellData.index;
+      
+      // Удаляем звезды и свечение
+      const stars = cell.querySelectorAll('.star-animation');
+      stars.forEach(star => star.remove());
+      
+      // Удаляем класс активной ячейки
+      cell.classList.remove('cell-active');
+      
+      // Удаляем пульсацию у элемента cell-glow
+      const cellGlow = cell.querySelector('.cell-glow');
+      if (cellGlow) {
+        cellGlow.classList.remove('pulsing');
+      }
+      
+      // Восстанавливаем оригинальное изображение
+      if (!cell.querySelector('img:not(.star-animation)')) {
+        // Очищаем содержимое ячейки
+        cell.innerHTML = '';
+        
+        // Создаем новое изображение с исходным источником
+        const newImg = document.createElement('img');
+        newImg.width = 56;
+        newImg.height = 56;
+        
+        // Используем сохраненный источник или выбираем из списка по умолчанию
+        const originalSrc = gameState.originalImages[index];
+        if (originalSrc) {
+          newImg.src = originalSrc;
+        } else {
+          const imgIndices = [5450, 11641, 18337, 24493, 31201, 37357, 44065, 50221, 
+                             56929, 63085, 69793, 75949, 82645, 89353, 95509, 102217, 
+                             108373, 115081, 121237, 127381, 134077, 140221, 146917, 
+                             153061, 159757];
+          const randomIndex = Math.floor(Math.random() * imgIndices.length);
+          newImg.src = `output_svgs/image_${imgIndices[randomIndex]}.svg`;
+        }
+        
+        // Добавляем изображение в ячейку
+        cell.appendChild(newImg);
+        
+        // Добавляем эффект свечения
+        const cellGlowNew = document.createElement('div');
+        cellGlowNew.className = 'cell-glow';
+        cell.appendChild(cellGlowNew);
+      }
+    });
+  }
   
   // Обработчик кнопки "Понятно"
   playAgainBtn.addEventListener('click', function() {
