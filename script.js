@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const resultMessage = document.getElementById('result-message');
   const playAgainBtn = document.getElementById('playAgainBtn');
   const minesLeftDisplay = document.getElementById('minesLeft');
-  const scoreDisplay = document.getElementById('scoreDisplay');
   
   // Соответствие количества мин к количеству показываемых полей
   const trapsToCellsOpenMapping = {
@@ -37,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function () {
     firstClick: true,
     gameOver: false,
     minesPlaced: false,
-    score: 0,
     signalUsed: false
   };
   
@@ -156,22 +154,19 @@ document.addEventListener('DOMContentLoaded', function () {
       firstClick: true,
       gameOver: false,
       minesPlaced: false,
-      score: 0,
       signalUsed: false
     };
     
     // Обновляем счетчики
     minesLeftDisplay.textContent = gameState.minesCount;
-    scoreDisplay.textContent = '0';
     
     // Очищаем доску и восстанавливаем оригинальное состояние
     cellsBoard.innerHTML = originalState;
     
-    // Добавляем индексы к ячейкам и события клика
+    // Добавляем индексы к ячейкам, но НЕ добавляем обработчики клика
     const cells = cellsBoard.querySelectorAll('.cell');
     cells.forEach((cell, index) => {
       cell.dataset.index = index;
-      cell.addEventListener('click', handleCellClick);
       
       // Добавляем анимацию появления ячеек
       setTimeout(() => {
@@ -213,108 +208,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     gameState.minesPlaced = true;
-  }
-  
-  // Обработчик клика по ячейке
-  function handleCellClick(event) {
-    if (gameState.gameOver) return;
-    
-    const cell = event.currentTarget;
-    const index = parseInt(cell.dataset.index);
-    const cellData = gameState.cells[index];
-    
-    // Если ячейка уже открыта, ничего не делаем
-    if (cellData.isRevealed) return;
-    
-    // Открываем ячейку
-    revealCell(cellData);
-    
-    // Проверяем условия победы/поражения
-    checkGameState();
-  }
-  
-  // Открытие ячейки
-  function revealCell(cellData) {
-    const cell = cellData.element;
-    
-    // Помечаем ячейку как открытую
-    cellData.isRevealed = true;
-    gameState.revealed++;
-    
-    // Анимация исчезновения текущего содержимого
-    cell.classList.add('cell-fade-out');
-    
-    setTimeout(() => {
-      // Очищаем содержимое
-      cell.innerHTML = '';
-      
-      // Если мина - показываем взрыв
-      if (cellData.isMine) {
-        showMine(cell);
-        gameState.gameOver = true;
-        
-        // Показываем все остальные мины с задержкой
-        setTimeout(revealAllMines, 500);
-      } else {
-        // Иначе показываем безопасную ячейку
-        showSafe(cell);
-        
-        // Увеличиваем счет
-        gameState.score += 10;
-        scoreDisplay.textContent = gameState.score;
-      }
-      
-      cell.classList.remove('cell-fade-out');
-    }, 300);
-  }
-  
-  // Показать мину
-  function showMine(cell) {
-    const mineIcon = document.createElement('div');
-    mineIcon.className = 'mine-icon';
-    mineIcon.textContent = '💣';
-    mineIcon.style.opacity = '0';
-    mineIcon.style.transform = 'scale(0)';
-    
-    // Создаем элемент взрыва
-    const explosion = document.createElement('div');
-    explosion.className = 'explosion';
-    
-    cell.appendChild(explosion);
-    cell.appendChild(mineIcon);
-    
-    // Анимация взрыва
-    setTimeout(() => {
-      mineIcon.style.opacity = '1';
-      mineIcon.style.transform = 'scale(1)';
-      
-      // Добавляем вибрацию (если доступно в Telegram)
-      if (tg && tg.HapticFeedback) {
-        tg.HapticFeedback.notificationOccurred('error');
-      }
-    }, 100);
-  }
-  
-  // Показать безопасную ячейку
-  function showSafe(cell) {
-    const safeIcon = document.createElement('div');
-    safeIcon.className = 'safe-icon';
-    safeIcon.textContent = '✓';
-    safeIcon.style.opacity = '0';
-    safeIcon.style.transform = 'scale(0)';
-    
-    cell.appendChild(safeIcon);
-    
-    // Анимация появления значка
-    setTimeout(() => {
-      safeIcon.style.opacity = '1';
-      safeIcon.style.transform = 'scale(1)';
-      
-      // Добавляем вибрацию (если доступно в Telegram)
-      if (tg && tg.HapticFeedback) {
-        tg.HapticFeedback.notificationOccurred('success');
-      }
-    }, 100);
   }
   
   // Показать звездочку (для сигнала)
@@ -392,116 +285,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 100);
   }
   
-  // Показать все мины
-  function revealAllMines() {
-    gameState.cells.forEach((cellData, index) => {
-      if (cellData.isMine && !cellData.isRevealed) {
-        const cell = cellData.element;
-        
-        // Анимация исчезновения текущего содержимого
-        cell.classList.add('cell-fade-out');
-        
-        setTimeout(() => {
-          cell.innerHTML = '';
-          showMine(cell);
-          cell.classList.remove('cell-fade-out');
-        }, index * 50); // Задержка для последовательного появления
-      }
-    });
-    
-    // Отображаем модальное окно результатов
-    setTimeout(showResults, 1000);
-  }
-  
-  // Проверка состояния игры
-  function checkGameState() {
-    // Условие победы: открыты все ячейки, кроме мин
-    const totalCells = ROWS * COLS;
-    const winCondition = totalCells - gameState.minesCount === gameState.revealed;
-    
-    if (gameState.gameOver) {
-      // Проигрыш - действия выполняются в revealAllMines
-    } else if (winCondition) {
-      gameState.gameOver = true;
-      
-      // Бонус за победу
-      gameState.score += 50;
-      scoreDisplay.textContent = gameState.score;
-      
-      // Отображаем все мины как найденные
-      markAllMines();
-      
-      // Отображаем модальное окно результатов
-      setTimeout(showResults, 1000);
-    }
-  }
-  
-  // Отметить все мины (при победе)
-  function markAllMines() {
-    gameState.cells.forEach((cellData, index) => {
-      if (cellData.isMine && !cellData.isRevealed) {
-        const cell = cellData.element;
-        
-        // Анимируем ячейку
-        cell.classList.add('cell-found');
-        
-        setTimeout(() => {
-          const flagIcon = document.createElement('div');
-          flagIcon.className = 'flag-icon';
-          flagIcon.textContent = '🚩';
-          flagIcon.style.opacity = '0';
-          flagIcon.style.transform = 'scale(0)';
-          
-          cell.innerHTML = '';
-          cell.appendChild(flagIcon);
-          
-          // Анимация появления флага
-          setTimeout(() => {
-            flagIcon.style.opacity = '1';
-            flagIcon.style.transform = 'scale(1)';
-          }, 100);
-        }, index * 50);
-      }
-    });
-  }
-  
-  // Показать модальное окно результатов
-  function showResults() {
-    // Определяем текст в зависимости от результата
-    if (gameState.gameOver && gameState.revealed <= gameState.minesCount) {
-      // Проигрыш
-      resultTitle.textContent = 'Игра окончена!';
-      resultMessage.textContent = `Вы нашли ${gameState.revealed - 1} из ${ROWS * COLS - gameState.minesCount} безопасных ячеек. Ваш счет: ${gameState.score}`;
-    } else {
-      // Победа
-      resultTitle.textContent = 'Победа!';
-      resultMessage.textContent = `Вы нашли все безопасные ячейки! Ваш счет: ${gameState.score}`;
-    }
-    
-    // Отображаем модальное окно
-    resultModal.classList.remove('hidden');
-    
-    // Отправляем результат в Telegram (если доступно)
-    if (tg && tg.sendData) {
-      const result = {
-        score: gameState.score,
-        win: !gameState.gameOver || gameState.revealed > gameState.minesCount,
-        mines: gameState.minesCount,
-        revealed: gameState.revealed
-      };
-      
-      tg.sendData(JSON.stringify(result));
-    }
-  }
-  
   // Кнопка "Получить сигнал" - показывает звездочки на безопасных ячейках
   safeSignalBtn.addEventListener('click', function() {
-    if (gameState.gameOver || gameState.signalUsed) return;
+    if (gameState.signalUsed) return;
     
-    // Находим все безопасные и нераскрытые ячейки
-    const safeCells = gameState.cells.filter(cell => 
-      !cell.isMine && !cell.isRevealed
-    );
+    // Находим все безопасные ячейки
+    const safeCells = gameState.cells.filter(cell => !cell.isMine);
     
     if (safeCells.length === 0) return;
     
@@ -534,6 +323,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Отмечаем, что сигнал был использован после показа всех звезд
         gameState.signalUsed = true;
         console.log("Все звезды показаны");
+        
         return;
       }
       
@@ -583,10 +373,13 @@ document.addEventListener('DOMContentLoaded', function () {
     showStarsSequentially(0);
   });
   
-  // Обработчик кнопки "Играть снова"
+  // Обработчик кнопки "Понятно"
   playAgainBtn.addEventListener('click', function() {
     resultModal.classList.add('hidden');
-    initGame();
+    // Инициализируем игру только если мы уже получили сигнал
+    if (gameState.signalUsed) {
+      initGame();
+    }
   });
   
   // Запуск игры при загрузке страницы происходит в hidePreloader()
@@ -601,9 +394,9 @@ document.addEventListener('DOMContentLoaded', function () {
       this.classList.remove('btn-hover');
     });
   });
+  
+  // Добавляем класс стилизации в зависимости от темы Telegram (если доступно)
+  if (window.Telegram?.WebApp) {
+    document.documentElement.dataset.theme = window.Telegram.WebApp.colorScheme;
+  }
 });
-
-// Добавляем класс стилизации в зависимости от темы Telegram (если доступно)
-if (window.Telegram?.WebApp) {
-  document.documentElement.dataset.theme = window.Telegram.WebApp.colorScheme;
-}
